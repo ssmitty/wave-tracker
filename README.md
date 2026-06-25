@@ -37,7 +37,9 @@ pytest
 
 ## Deploy
 
-The app is ready for Streamlit Community Cloud.
+Live demo: https://ssmitty-wave-tracker-app-ch6ihf.streamlit.app/
+
+The app is deployed on Streamlit Community Cloud.
 
 - Repository: `ssmitty/wave-tracker`
 - Branch: `main`
