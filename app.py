@@ -31,6 +31,7 @@ from wavevision.cv.calibration import (  # noqa: E402
 )
 from wavevision.cv.pipeline import WaveCVPipeline  # noqa: E402
 from wavevision.cv.video import (  # noqa: E402
+    VideoLoadError,
     extract_middle_frame,
     read_video_metadata,
     save_upload,
@@ -81,6 +82,7 @@ def _init_state() -> None:
     defaults = {
         "step": "Upload",
         "video_id": None,
+        "source_video_id": None,
         "video_path": None,
         "metadata": None,
         "calibration_frame": None,
@@ -96,7 +98,10 @@ def _init_state() -> None:
 
 def _upload_step() -> None:
     st.subheader("Upload beach footage")
-    uploaded = st.file_uploader("Video file", type=["mp4", "mov", "avi"])
+    uploaded = st.file_uploader(
+        "Video file",
+        type=["mp4", "mov", "qt", "avi", "mpeg4", "m4v"],
+    )
     location_query = st.text_input(
         "Location",
         placeholder="Example: Malibu, CA",
@@ -105,11 +110,18 @@ def _upload_step() -> None:
 
     if uploaded:
         suffix = Path(uploaded.name).suffix.lower()
-        if st.session_state.video_path is None:
-            video_id, path = save_upload(uploaded, suffix)
-            metadata = read_video_metadata(path)
-            middle_frame = extract_middle_frame(path, metadata)
-            st.session_state.video_id = video_id
+        uploaded_key = _uploaded_file_key(uploaded)
+        if st.session_state.video_id != uploaded_key:
+            try:
+                video_id, path = save_upload(uploaded, suffix)
+                metadata = read_video_metadata(path)
+                middle_frame = extract_middle_frame(path, metadata)
+            except VideoLoadError as error:
+                st.error(f"{error} Try exporting the video as H.264 MP4 or MOV.")
+                return
+
+            st.session_state.video_id = uploaded_key
+            st.session_state.source_video_id = video_id
             st.session_state.video_path = path
             st.session_state.metadata = metadata
             st.session_state.calibration_frame = middle_frame
@@ -331,6 +343,14 @@ def _render_dashboard(result: object) -> None:
 def _frame_to_image(frame: object) -> Image.Image:
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     return Image.fromarray(rgb)
+
+
+def _uploaded_file_key(uploaded: object) -> str:
+    file_id = getattr(uploaded, "file_id", None)
+    if file_id:
+        return str(file_id)
+    size = getattr(uploaded, "size", None)
+    return f"{uploaded.name}:{size}"
 
 
 def _resize_for_canvas(image: Image.Image, max_width: int = 980) -> tuple[Image.Image, float]:
