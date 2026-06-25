@@ -28,6 +28,27 @@ OpenAI is optional:
 export OPENAI_API_KEY="your-key"
 ```
 
+For local tests, install the development requirements:
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+## Deploy
+
+The app is ready for Streamlit Community Cloud.
+
+- Repository: `ssmitty/wave-tracker`
+- Branch: `main`
+- Entry point: `app.py`
+- Python version: `3.11`
+- Optional secret: `OPENAI_API_KEY`
+
+Streamlit Cloud installs production dependencies from `requirements.txt`. Keep
+test and lint tools in `requirements-dev.txt` so the public app build stays
+small.
+
 ## MVP notes
 
 This version is built for one fixed camera angle and should be tuned once real
